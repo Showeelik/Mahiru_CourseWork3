@@ -4,6 +4,8 @@ import logging
 import logging.handlers
 import os
 from abc import ABC, abstractmethod
+from logging.handlers import RotatingFileHandler
+from os import makedirs
 from typing import Any, Dict, List, Optional
 
 from config import AREAS_DIR, EMPLOYERS_DIR, LOGS_DIR
@@ -60,13 +62,13 @@ def setup_logger(module_name: str) -> logging.Logger:
 
     if not logger.handlers:
         if not os.path.exists(LOGS_DIR):
-            os.makedirs(LOGS_DIR)
+            makedirs(LOGS_DIR)
 
         # Укажите название к журналу в папке logs
         log_name = f'{datetime.datetime.now().strftime("%Y-%m-%d")}.log'
         log_path = os.path.join(LOGS_DIR, log_name)
         # Создайте обработчик файлов с обычным форматером (без ANSI)
-        log_handler = logging.handlers.RotatingFileHandler(
+        log_handler = RotatingFileHandler(
             filename=log_path,
             encoding="utf-8",
             maxBytes=32 * 1024 * 1024,  # 32 MiB

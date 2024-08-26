@@ -127,8 +127,8 @@ class Vacancy:
         name: str,
         url: str,
         publication_date: str,
-        salary: Optional[Dict[str, Any]],
-        snippet: Optional[Dict[str, str]],
+        salary: Optional[Dict[str, Any]] = None,
+        snippet: Optional[Dict[str, str]] = None,
         address: str = "Не указан адрес",
         employment: str = "Не указано занятость",
         schedule: str = "Не указан график",
@@ -229,7 +229,7 @@ class Vacancy:
             f"{' Вакансия ':=^100}\n"
             f"Вакансия: {self.title}\n"
             f"URL: {self.url}\n"
-            f"URL Работодателz: https://hh.ru/employer/{self.id_employer}\n"
+            f"URL Работодателя: https://hh.ru/employer/{self.id_employer}\n"
             f"Адрес: {self.address}\n"
             f"Дата публикации: {self.publication_date}\n"
             f"Опыт работы: {self.experience}\n"
@@ -285,7 +285,7 @@ class Vacancy:
             "experience": self.experience,
             "schedule": self.schedule,
             "employment": self.employment,
-            "employer": {"id": self.id_employer, "employer": "https://hh.ru/employer/" + str(self.id_employer)},
+            "employer": {"id": self.id_employer, "url": "https://hh.ru/employer/" + str(self.id_employer)},
             "salary": {
                 "to": self.salary_to,
                 "from": self.salary_from,

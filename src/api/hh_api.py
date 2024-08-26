@@ -24,7 +24,13 @@ class API(ABC):
 
     @abstractmethod
     def load_vacancies(
-        self, query: Optional[str], page: int, per_page: int, area: Optional[int], employer_ids: Optional[List[int]]
+        self,
+        query: Optional[str],
+        page: int,
+        total_pages: int,
+        per_page: int,
+        area: Optional[int],
+        employer_ids: Optional[List[int]],
     ) -> list[dict[Any, Any]]:
         pass
 
@@ -42,6 +48,7 @@ class HHAPI(API):
         self,
         query: Optional[str] = None,
         page: int = 0,
+        total_pages: int = 20,
         per_page: int = 10,
         area: Optional[int] = None,
         employer_ids: Optional[List[int]] = None,
@@ -78,7 +85,7 @@ class HHAPI(API):
 
         # Если employer_ids не указаны, ищем вакансии без фильтра по работодателям
         if employer_ids is None:
-            while int(self.__params_var["page"]) < 20:
+            while int(self.__params_var["page"]) < total_pages:
                 response = requests.get(self.__url_vacancies, headers=self.__headers, params=self.__params_var)
                 response.raise_for_status()
                 vacancies = response.json().get("items", [])
@@ -96,7 +103,7 @@ class HHAPI(API):
                 self.__params_var["employer_id"] = employer_id
                 self.__params_var["page"] = 0
                 print(f"Загрузка вакансий работодателя {employer_id}.")
-                while int(self.__params_var["page"]) < 20:
+                while int(self.__params_var["page"]) < total_pages:
                     response = requests.get(self.__url_vacancies, headers=self.__headers, params=self.__params_var)
                     try:
                         response.raise_for_status()

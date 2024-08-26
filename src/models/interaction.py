@@ -106,7 +106,7 @@ class VacancyInteraction(Interaction):
         self.db = DBManager()
         self.api = HHAPI()
 
-    def interact(self) -> Any:
+    def interact(self) -> List[Vacancy]:
         """
         # Вывод вакансий
         """
