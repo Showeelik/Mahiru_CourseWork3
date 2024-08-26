@@ -102,7 +102,6 @@ class HHAPI(API):
             for employer_id in employer_ids:
                 self.__params_var["employer_id"] = employer_id
                 self.__params_var["page"] = 0
-                print(f"Загрузка вакансий работодателя {employer_id}.")
                 while int(self.__params_var["page"]) < total_pages:
                     response = requests.get(self.__url_vacancies, headers=self.__headers, params=self.__params_var)
                     try:
