@@ -26,7 +26,7 @@ cd Mahiru_CourseWork3
 Создайте виртуальное окружение и установите необходимые зависимости:
 
 ```bash
-poetry env use python3.X
+poetry env use python
 
 poetry shell
 
