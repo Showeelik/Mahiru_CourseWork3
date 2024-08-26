@@ -26,7 +26,7 @@ class Employer:
         self.name = name
         self.url = url
         self.vacancies_url = vacancies_url
-        self.open_vacancies = open_vacancies
+        self.open_vacancies: int = open_vacancies
         self.vacancies_in_database = vacancies_in_database
 
     def __str__(self) -> str:
@@ -50,22 +50,34 @@ class Employer:
         }
 
     def __lt__(self, other: Any) -> bool:
-        return self.open_vacancies < other.open_vacancies
+        if isinstance(other, Employer):
+            return self.open_vacancies < other.open_vacancies
+        return NotImplemented
 
     def __eq__(self, other: Any) -> bool:
-        return self.open_vacancies == other.open_vacancies
+        if isinstance(other, Employer):
+            return self.open_vacancies == other.open_vacancies
+        return NotImplemented
 
     def __gt__(self, other: Any) -> bool:
-        return self.open_vacancies > other.open_vacancies
+        if isinstance(other, Employer):
+            return self.open_vacancies > other.open_vacancies
+        return NotImplemented
 
     def __ne__(self, other: Any) -> bool:
-        return self.open_vacancies != other.open_vacancies
+        if isinstance(other, Employer):
+            return self.open_vacancies != other.open_vacancies
+        return NotImplemented
 
     def __ge__(self, other: Any) -> bool:
-        return self.open_vacancies >= other.open_vacancies
+        if isinstance(other, Employer):
+            return self.open_vacancies >= other.open_vacancies
+        return NotImplemented
 
     def __le__(self, other: Any) -> bool:
-        return self.open_vacancies <= other.open_vacancies
+        if isinstance(other, Employer):
+            return self.open_vacancies <= other.open_vacancies
+        return NotImplemented
 
     @classmethod
     def create_instances_from_hh_api_data(cls, hh_data: List[Dict]) -> List["Employer"]:
@@ -177,13 +189,11 @@ class Vacancy:
         return instances
 
     @classmethod
-    def from_tuple_to_list(
-        cls, data: List[Tuple[int, int, str, str, str, dict, dict, str, str, str, str]]
-    ) -> List["Vacancy"]:
+    def from_tuple_to_list(cls, data: List[tuple]) -> List["Vacancy"]:
         """
         Преобразует список кортежей в список объектов класса Vacancy.
 
-        :param List[Tuple[int, str, str, str, dict, dict, str, str, str, str]] data:
+        :param List[tuple] data:
             Список кортежей, где каждый кортеж содержит данные для создания объекта Vacancy.
 
         :return: Список объектов Vacancy.
@@ -233,22 +243,34 @@ class Vacancy:
 
     # Операторы сравнения, опирающиеся на зарплату
     def __lt__(self, other: Any) -> bool:
-        return self.__get_salary() < other.__get_salary()
+        if isinstance(other, Vacancy):
+            return self.__get_salary() < other.__get_salary()
+        return NotImplemented
 
     def __le__(self, other: Any) -> bool:
-        return self.__get_salary() <= other.__get_salary()
+        if isinstance(other, Vacancy):
+            return self.__get_salary() <= other.__get_salary()
+        return NotImplemented
 
     def __gt__(self, other: Any) -> bool:
-        return self.__get_salary() > other.__get_salary()
+        if isinstance(other, Vacancy):
+            return self.__get_salary() > other.__get_salary()
+        return NotImplemented
 
     def __ge__(self, other: Any) -> bool:
-        return self.__get_salary() >= other.__get_salary()
+        if isinstance(other, Vacancy):
+            return self.__get_salary() >= other.__get_salary()
+        return NotImplemented
 
     def __eq__(self, other: Any) -> bool:
-        return self.__get_salary() == other.__get_salary()
+        if isinstance(other, Vacancy):
+            return self.__get_salary() == other.__get_salary()
+        return NotImplemented
 
     def __ne__(self, other: Any) -> bool:
-        return self.__get_salary() != other.__get_salary()
+        if isinstance(other, Vacancy):
+            return self.__get_salary() != other.__get_salary()
+        return NotImplemented
 
     def to_json(self) -> dict:
         """

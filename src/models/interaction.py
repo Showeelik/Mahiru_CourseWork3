@@ -1,17 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Literal
+from typing import Any, List, Literal, Optional
 
 from src.api.hh_api import HHAPI
 from src.db.db import DBManager
-from src.models.hh_models import Vacancy, Employer
-from src.utils import (
-    AreaFileWorker,
-    EmployerFileWorker,
-    filter_jobs_by_salary_range,
-    find_city,
-    get_integer_input,
-    setup_logger,
-)
+from src.models.hh_models import Employer, Vacancy
+from src.utils import AreaFileWorker, EmployerFileWorker, find_city, setup_logger
 
 logger = setup_logger(__name__)
 
@@ -19,7 +12,7 @@ logger = setup_logger(__name__)
 class Interaction(ABC):
 
     @abstractmethod
-    def interact(self) -> List[dict]:
+    def interact(self) -> Any:
         pass
 
     @staticmethod
@@ -48,13 +41,13 @@ class SearchInteraction(Interaction):
         self.api = api
         self.search_type = search_type
 
-    def interact(self) -> List[dict]:
+    def interact(self) -> Any:
         """
         ## Поиск вакансий или работодателей
 
         :return List[dict]: Список вакансий или работодателей
         """
-        # TODO: добавить поиск вакансий и взаимодействие с базой данных
+        # TODO : добавить поиск вакансий и взаимодействие с базой данных
         # if self.search_type == "vacancy":
         #     area = input("\nВыберите регион (По умолчанию Все): ")
         #     logger.info(f"Выбран регион поиска: {area if area else 'Все'}")
@@ -64,7 +57,8 @@ class SearchInteraction(Interaction):
         #     logger.info(f"Поиск по ключевому слову: {query}")
 
         #     salary_range = (
-        #         input("Введите диапазон зарплаты. Формат: мин - макс (через пробел) или макс (необязательно): ") or None
+        #         input(
+        # "Введите диапазон зарплаты. Формат: мин - макс (через пробел) или макс (необязательно): ") or None
         #     )
 
         #     print("\nИщем вакансии...")
@@ -94,9 +88,6 @@ class SearchInteraction(Interaction):
                 == "y"
             )
 
-            if query == "":
-                query = None
-
             print("\nИщем работодателей...")
             employers = self.api.load_employers(query, area=city_id, sort_by=sort_employers)
             if len(employers) == 0:
@@ -111,12 +102,11 @@ class SearchInteraction(Interaction):
 
 class VacancyInteraction(Interaction):
     def __init__(self) -> None:
-        self.storage = None
         self.search_vacancies = SearchInteraction(HHAPI(), search_type="vacancy")
         self.db = DBManager()
         self.api = HHAPI()
 
-    def interact(self) -> List[Vacancy]:
+    def interact(self) -> Any:
         """
         # Вывод вакансий
         """
@@ -161,7 +151,6 @@ class VacancyInteraction(Interaction):
 
             else:
                 print("\nНеверная опция.")
-                continue
 
 
 class EmployeeInteraction(Interaction):
@@ -198,7 +187,6 @@ class EmployeeInteraction(Interaction):
 
             else:
                 print("\nНеверная опция.")
-                continue
 
     def __show_employers(self) -> List[Employer]:
         """
@@ -210,7 +198,7 @@ class EmployeeInteraction(Interaction):
         data_api = []
 
         for employer_name in employer_names:
-            data_api.extend(self.api.load_employers(employer_name["name"], total_page=1, per_page=1))
+            data_api.extend(self.api.load_employers(employer_name["name"], total_pages=1, per_page=1))
             print(f"\rЗагружено: {len(data_api)} работодателей", end="")
 
         employes = Employer.create_instances_from_hh_api_data(data_api)
@@ -239,11 +227,11 @@ class EmployeeInteraction(Interaction):
 
 
 class DataBaseInteraction(Interaction):
-    def __init__(self, db: DBManager, storage: List[Vacancy | Employer] = None) -> None:
+    def __init__(self, db: DBManager, storage: Optional[List[Vacancy] | List[Employer]] = None) -> None:
         self.db = db
         self.storage = storage
 
-    def interact(self) -> Any:
+    def interact(self) -> None:
         while True:
             print(
                 "\n1. Загрузить даннуе в базу данных" + (" (Недоступно, нет данных)" if self.storage is None else "")
@@ -263,37 +251,35 @@ class DataBaseInteraction(Interaction):
                 if self.storage is None:
                     print("\nНедоступно, нет данных.")
                     continue
+                print("\nЗагрузка данных в базу данных.")
                 if isinstance(self.storage, list):
+                    # Проверяем, что все элементы являются экземплярами Vacancy
+                    # прежде чем вызывать _load_vacancies_to_db
                     if all(isinstance(item, Vacancy) for item in self.storage):
-                        self._load_vacancies_to_db(self.storage)
-                        continue
-                    elif all(isinstance(item, Employer) for item in self.storage):
-                        self._load_employers_to_db(self.storage)
-                        continue
+                        self._load_vacancies_to_db(self.storage)  # self.storage теперь точно List[Vacancy]
+
+                    # Проверяем, что все элементы являются экземплярами Employer
+                    # прежде чем вызывать _load_employers_to_db
+                    if all(isinstance(item, Employer) for item in self.storage):
+                        self._load_employers_to_db(self.storage)  # self.storage теперь точно List[Employer]
                     else:
                         print("\nОшибка: список содержит объекты несоответствующего типа.")
-                        continue
                 else:
                     print("\nОшибка: self.storage не является списком.")
-                    continue
 
             elif choice == "2":
 
                 self._additional_functions()
-                continue
 
             elif choice == "3":
                 if self.db.check_if_db_exists():
                     self.db.drop_db()
                     print("\nБаза данных удалена.")
-                    continue
                 else:
                     if self.db.create_db():
                         print("\nБаза данных создана.")
-                        continue
                     else:
                         print("\nОшибка: не удалось создать базу данных.")
-                        continue
 
             elif choice == "4":
                 logger.info("Назад.")
@@ -301,7 +287,6 @@ class DataBaseInteraction(Interaction):
 
             else:
                 print("\nНеверная опция.")
-                continue
 
     def _load_vacancies_to_db(self, data: List[Vacancy]) -> None:
         """
@@ -325,13 +310,13 @@ class DataBaseInteraction(Interaction):
 
         print("\nРаботодатели загружены в базу данных.")
 
-    def _additional_functions(self) -> list:
+    def _additional_functions(self) -> None:
         """
         ## Дополнительные функции для работы с базой данных
         """
         while True:
             print("\n1. Вывод всех работодателей")
-            print("2. Вывод всех вакансий в базе данных")
+            print("2. Вывод всех вакансий из базе данных")
             print("3. Вывод вакансий по ключевому слову")
             print("4. Вывод вакансий с зарплатой выше средней")
             print("5. Подсчет средней заработной платы у всех вакансий")
@@ -347,14 +332,11 @@ class DataBaseInteraction(Interaction):
                     print(employer)
 
                 Employer.reset_employer_count()
-                continue
 
             elif choice == "2":
                 vacancies = Vacancy.from_tuple_to_list(self.db.get_all_vacancies())
                 for vacancy in self._sorted_jobs(vacancies):
                     print(vacancy)
-
-                continue
 
             elif choice == "3":
 
@@ -363,20 +345,14 @@ class DataBaseInteraction(Interaction):
                 for vacancy in self._sorted_jobs(vacancies):
                     print(vacancy)
 
-                continue
-
             elif choice == "4":
                 vacancies = Vacancy.from_tuple_to_list(self.db.get_vacancies_with_higher_salary())
                 for vacancy in self._sorted_jobs(vacancies):
                     print(vacancy)
 
-                continue
-
             elif choice == "5":
                 average_salary = self.db.get_avg_salary()
                 print(f"\nСредняя зарплата: {average_salary:.0f} руб.")
-
-                continue
 
             elif choice == "6":
                 logger.info("Назад.")
@@ -384,4 +360,3 @@ class DataBaseInteraction(Interaction):
 
             else:
                 print("\nНеверная опция.")
-                continue

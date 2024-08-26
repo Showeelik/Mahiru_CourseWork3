@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Union, overload
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
@@ -12,13 +12,19 @@ class API(ABC):
 
     @abstractmethod
     def load_employers(
-        self, query: str = None, page: int = 0, per_page: int = 10, sort_by: bool = False, area: int = None
+        self,
+        query: Optional[str] = None,
+        page: int = 0,
+        per_page: int = 10,
+        total_pages: Optional[int] = None,
+        sort_by: bool = False,
+        area: Optional[int] = None,
     ) -> list[dict[Any, Any]]:
         pass
 
     @abstractmethod
     def load_vacancies(
-        self, query: str = None, page: int = 0, per_page: int = 10, area: int = None, employer_ids: list[int] = None
+        self, query: Optional[str], page: int, per_page: int, area: Optional[int], employer_ids: Optional[List[int]]
     ) -> list[dict[Any, Any]]:
         pass
 
@@ -33,7 +39,12 @@ class HHAPI(API):
         self.vacancies: list[dict[Any, Any]] = []
 
     def load_vacancies(
-        self, query: str = None, page: int = None, per_page: int = 10, area: int = None, employer_ids: list[int] = None
+        self,
+        query: Optional[str] = None,
+        page: int = 0,
+        per_page: int = 10,
+        area: Optional[int] = None,
+        employer_ids: Optional[List[int]] = None,
     ) -> list[dict[Any, Any]]:
         """
         Загружает вакансии по ключевому слову из API hh.ru.
@@ -56,11 +67,14 @@ class HHAPI(API):
 
         # Параметры запроса
         self.__params_var = {
-            "text": query or None,
-            "page": page or 0,
-            "per_page": per_page or 10,
-            "area": area or None,
+            "page": page,
+            "per_page": per_page,
         }
+
+        if query:
+            self.__params_var["text"] = query
+        if area:
+            self.__params_var["area"] = area
 
         # Если employer_ids не указаны, ищем вакансии без фильтра по работодателям
         if employer_ids is None:
@@ -68,14 +82,20 @@ class HHAPI(API):
                 response = requests.get(self.__url_vacancies, headers=self.__headers, params=self.__params_var)
                 response.raise_for_status()
                 vacancies = response.json().get("items", [])
+                if len(vacancies) == 0:
+                    break
                 self.vacancies.extend(vacancies)
                 print(f"\rЗагрузка {len(self.vacancies)} вакансий.", end="")
-                self.__params_var["page"] += 1
+                # Преобразуем значение страницы в целое число, увеличиваем его, и затем снова в строку
+                current_page = int(self.__params_var["page"])
+                self.__params_var["page"] = str(current_page + 1)
 
         else:
             # Поиск по каждому работодателю
             for employer_id in employer_ids:
                 self.__params_var["employer_id"] = employer_id
+                self.__params_var["page"] = 0
+                print(f"Загрузка вакансий работодателя {employer_id}.")
                 while int(self.__params_var["page"]) < 20:
                     response = requests.get(self.__url_vacancies, headers=self.__headers, params=self.__params_var)
                     try:
@@ -83,9 +103,12 @@ class HHAPI(API):
                     except requests.exceptions.HTTPError as e:
                         raise requests.exceptions.HTTPError(e)
                     vacancies = response.json().get("items", [])
+                    if len(vacancies) == 0:
+                        break
                     self.vacancies.extend(vacancies)
                     print(f"\rЗагружено {len(self.vacancies)} вакансий.", end="")
-                    self.__params_var["page"] += 1
+                    current_page = int(self.__params_var["page"])
+                    self.__params_var["page"] = str(current_page + 1)
 
         logger.info(f"Загружено {len(self.vacancies)} вакансий.")
 
@@ -93,12 +116,12 @@ class HHAPI(API):
 
     def load_employers(
         self,
-        query: str = None,
+        query: Optional[str] = None,
         page: int = 0,
-        total_page: int = 10,
         per_page: int = 10,
+        total_pages: Optional[int] = None,
         sort_by: bool = False,
-        area: int = None,
+        area: Optional[int] = None,
     ) -> list[dict[Any, Any]]:
         """
         Загружает список работодателей из API hh.ru
@@ -123,10 +146,12 @@ class HHAPI(API):
             self.__params_emp["area"] = area
 
         # Извлекать новые данные из API
-        while int(self.__params_emp["page"]) < total_page:
+        while int(self.__params_emp["page"]) < total_pages if total_pages is not None else 20:
             response = requests.get(self.__url_employers, headers=self.__headers, params=self.__params_emp)
             response.raise_for_status()
             employers = response.json().get("items", [])
+            if len(employers) == 0:
+                break
             self.employers.extend(employers)
             self.__params_emp["page"] = int(self.__params_emp["page"]) + 1
 

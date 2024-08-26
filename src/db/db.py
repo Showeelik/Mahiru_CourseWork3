@@ -1,7 +1,10 @@
 import os
+from typing import Any, List
+
+import dotenv
 import psycopg2
 from psycopg2 import Error
-import dotenv
+
 from src.utils import setup_logger
 
 logger = setup_logger(__name__)
@@ -9,7 +12,7 @@ dotenv.load_dotenv()
 
 
 class DBManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.__conn = self.__connect()
         self.__cursor = self.__conn.cursor()
 
@@ -69,7 +72,7 @@ class DBManager:
             vacancies_url TEXT NOT NULL,
             open_vacancies INTEGER
         );
-        
+
         CREATE TABLE hh_api.vacancies (
             id SERIAL PRIMARY KEY,
             employer_id INTEGER NOT NULL REFERENCES hh_api.employers(id),
@@ -112,7 +115,7 @@ class DBManager:
         """
         statement = """
         INSERT INTO hh_api.vacancies (
-            id, employer_id, title, url, address, publication_date, experience, schedule, employment, 
+            id, employer_id, title, url, address, publication_date, experience, schedule, employment,
             salary_from, salary_to, salary_currency, salary_gross, description, requirement
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -120,7 +123,7 @@ class DBManager:
         """
         return self._execute_statement(statement, data)
 
-    def get_companies_and_vacancies_count(self) -> list:
+    def get_companies_and_vacancies_count(self) -> List[Any]:
         """
         Получение списка компаний и количества вакансий у каждой компании.
 
@@ -137,7 +140,7 @@ class DBManager:
             return self.__cursor.fetchall()
         return []
 
-    def get_all_vacancies(self) -> list:
+    def get_all_vacancies(self) -> List[Any]:
         """
         ## Получение всех вакансий из базы данных.
 
@@ -173,7 +176,7 @@ class DBManager:
             return result[0] if result and result[0] is not None else None
         return None
 
-    def get_vacancies_with_higher_salary(self) -> list[tuple]:
+    def get_vacancies_with_higher_salary(self) -> List[tuple[Any, ...]]:
         """
         ## Получение вакансий с зарплатой выше средней.
 
@@ -189,7 +192,7 @@ class DBManager:
         statement = """
         SELECT *
         FROM hh_api.vacancies
-        WHERE 
+        WHERE
         CASE
             WHEN salary_to IS NOT NULL AND salary_from IS NOT NULL
             THEN (salary_to + salary_from) / 2.0
@@ -202,7 +205,7 @@ class DBManager:
             return self.__cursor.fetchall()
         return []
 
-    def get_vacancies_with_keyword(self, keyword: str, company_id: int = None) -> list:
+    def get_vacancies_with_keyword(self, keyword: str, company_id: int = 0) -> list:
         """
         ### Вывод вакансий по ключевому слову во всех компаниях
         ### или только в указанной компании
@@ -211,27 +214,28 @@ class DBManager:
         :param int company_id: ID компании (опционально)
         :return list: Список вакансий
         """
-
-        if company_id:
+        # Определяем SQL-запрос и параметры
+        if company_id != 0:
             # Если указан ID компании, искать только в этой компании
             statement = """
             SELECT *
             FROM hh_api.vacancies
             WHERE title ILIKE %s AND employer_id = %s;
             """
-            params = ("%" + keyword + "%", company_id)
+            params = ("%" + keyword + "%", company_id)  # Кортеж из двух элементов
         else:
             # Искать во всех компаниях
             statement = "SELECT * FROM hh_api.vacancies WHERE title ILIKE %s;"
-            params = ("%" + keyword + "%",)
+            params = ("%" + keyword + "%",)  # Кортеж из одного элемента
 
+        # Выполнение SQL-запроса и получение результатов
         if self._execute_statement(statement, params):
             result = self.__cursor.fetchall()
             return result
 
         return []
 
-    def check_if_db_exists(self) -> bool:
+    def check_if_db_exists(self) -> bool | None:
         """
         Проверка существования базы данных (схемы и таблиц)
 
@@ -239,9 +243,9 @@ class DBManager:
         """
         statement = """
         SELECT EXISTS (
-            SELECT 1 
-            FROM information_schema.tables 
-            WHERE table_schema = 'hh_api' 
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'hh_api'
             AND table_name = 'employers'
         );
         """

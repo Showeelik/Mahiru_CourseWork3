@@ -3,9 +3,9 @@ import json
 import logging
 import logging.handlers
 import os
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from abc import ABC, abstractmethod
 from config import AREAS_DIR, EMPLOYERS_DIR, LOGS_DIR
 
 

@@ -1,7 +1,5 @@
-from src.models.interaction import VacancyInteraction, EmployeeInteraction, DataBaseInteraction
 from src.db.db import DBManager
-
-from typing import List
+from src.models.interaction import DataBaseInteraction, EmployeeInteraction, VacancyInteraction
 
 
 def main() -> None:
@@ -10,7 +8,7 @@ def main() -> None:
 
     while True:
         print("\nВыберите действие:")
-        print("\n1. Работа с работодателями")
+        print("1. Работа с работодателями")
         print("2. Работа с вакансиями")
         print("3. Работа с базой данных")
         print("4. Выход")
@@ -28,6 +26,7 @@ def main() -> None:
 
         elif choice == "4":
             print("До свидания.")
+            db.close()
             exit(0)
 
         else:
