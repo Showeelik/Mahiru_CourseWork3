@@ -143,7 +143,6 @@ class VacancyInteraction(Interaction):
                 #     for vac in self._sorted_jobs(vacances):
                 #         print(vac)
                 # return vacances
-                return []
 
             elif choice == "3":
                 logger.info("Назад.")
