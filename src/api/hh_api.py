@@ -106,8 +106,8 @@ class HHAPI(API):
                     response = requests.get(self.__url_vacancies, headers=self.__headers, params=self.__params_var)
                     try:
                         response.raise_for_status()
-                    except requests.exceptions.HTTPError as e:
-                        raise requests.exceptions.HTTPError(e)
+                    except requests.exceptions.HTTPError:
+                        continue
                     vacancies = response.json().get("items", [])
                     if len(vacancies) == 0:
                         break

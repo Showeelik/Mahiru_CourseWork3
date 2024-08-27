@@ -1,12 +1,11 @@
-import datetime
-import json
+from io import StringIO
 import logging
 import unittest
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import mock_open, patch
 
-from config import AREAS_DIR, EMPLOYERS_DIR, LOGS_DIR
+from config import AREAS_DIR, EMPLOYERS_DIR
 from src.utils import (AreaFileWorker, CustomFormatter, EmployerFileWorker, filter_jobs_by_salary_range, find_city,
-                       format_date, get_integer_input, setup_logger)
+                       format_date, get_integer_input, setup_logger, display_paginated_list)
 
 
 class TestCustomFormatter(unittest.TestCase):
@@ -104,6 +103,38 @@ class TestEmployerFileWorker(unittest.TestCase):
         data = worker.load_data()
         self.assertEqual(data, [{"id": 1, "name": "Company A"}])
         mock_file.assert_called_with(EMPLOYERS_DIR, "r", encoding="utf-8")
+
+class TestDisplayPaginatedList(unittest.TestCase):
+
+    @patch('sys.stdout', new_callable=StringIO)
+    @patch('builtins.input', side_effect=['q'])  # Мокируем input для завершения цикла
+    def test_display_paginated_list_empty(self, mock_input, mock_stdout):
+        items = []
+        display_paginated_list(items)
+        self.assertEqual(mock_stdout.getvalue(), "\nСписок пуст.\n")
+
+    @patch('sys.stdout', new_callable=StringIO)
+    @patch('builtins.input', side_effect=['q']) 
+    def test_display_paginated_list_one_page(self, mock_input, mock_stdout):
+        items = [1, 2, 3]
+        display_paginated_list(items, items_per_page=5)
+        output = mock_stdout.getvalue()
+        self.assertIn(" Страница \x1b[96m№1/1\x1b[0m ", output)
+        self.assertIn("1", output)
+        self.assertIn("2", output)
+        self.assertIn("3", output)
+
+    @patch('sys.stdout', new_callable=StringIO)
+    @patch('builtins.input', side_effect=['n', 'p', '3', 'q'])  # Мокируем ввод для навигации
+    def test_display_paginated_list_multiple_pages(self, mock_input, mock_stdout):
+        items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        display_paginated_list(items, items_per_page=3)
+        output = mock_stdout.getvalue()
+        # Проверяем вывод на разных страницах и навигацию
+        self.assertIn(" Страница \x1b[96m№1/4\x1b[0m ", output)
+        self.assertIn(" Страница \x1b[96m№2/4\x1b[0m ", output)
+        self.assertIn(" Страница \x1b[96m№3/4\x1b[0m ", output)
+
 
 
 if __name__ == "__main__":

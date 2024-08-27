@@ -4,7 +4,7 @@ from typing import Any, List, Literal, Optional
 from src.api.hh_api import HHAPI
 from src.db.db import DBManager
 from src.models.hh_models import Employer, Vacancy
-from src.utils import AreaFileWorker, EmployerFileWorker, find_city, setup_logger
+from src.utils import AreaFileWorker, EmployerFileWorker, find_city, setup_logger, get_integer_input, display_paginated_list
 
 logger = setup_logger(__name__)
 
@@ -26,7 +26,7 @@ class Interaction(ABC):
         :return List[Vacancy]: Список вакансий, отсортированный по зарплате
         """
 
-        return sorted(jobs, reverse=reverse)
+        return sorted(jobs, reverse=not reverse)
 
 
 class SearchInteraction(Interaction):
@@ -106,7 +106,7 @@ class VacancyInteraction(Interaction):
         self.db = DBManager()
         self.api = HHAPI()
 
-    def interact(self) -> List[Vacancy]:
+    def interact(self) -> List[Vacancy] | None:
         """
         # Вывод вакансий
         """
@@ -125,13 +125,12 @@ class VacancyInteraction(Interaction):
                     continue
 
                 self.employers_ids = [employer[0] for employer in self.employers]
-                self.storage = self.api.load_vacancies(per_page=100, employer_ids=self.employers_ids)
+                self.storage = self.api.load_vacancies(per_page=20, total_pages=5, employer_ids=self.employers_ids)
                 vacances = Vacancy.create_instances_from_hh_api_data(self.storage)
 
                 if input(f"\nВывести {len(vacances)} вакансии? (Да/Нет) ").lower() == "да":
-                    for vac in self._sorted_jobs(vacances):
-                        print(vac)
-
+                    display_paginated_list(self._sorted_jobs(vacances))
+                       
                 return vacances
 
             elif choice == "2":
@@ -203,8 +202,7 @@ class EmployeeInteraction(Interaction):
         employes = Employer.create_instances_from_hh_api_data(data_api)
 
         if input(f"\nВывести {len(employes)} работодателя? (Да/Нет) ").lower() == "да":
-            for employer in employes:
-                print(employer)
+            display_paginated_list(employes)
 
             Employer.reset_employer_count()
 
@@ -217,8 +215,8 @@ class EmployeeInteraction(Interaction):
 
         employes = Employer.create_instances_from_hh_api_data(self.search_employers.interact())
 
-        for employer in employes:
-            print(employer)
+        if input(f"\nВывести {len(employes)} работодателя? (Да/Нет) ").lower() == "да":
+            display_paginated_list(employes)
 
         Employer.reset_employer_count()
 
@@ -274,11 +272,14 @@ class DataBaseInteraction(Interaction):
                 if self.db.check_if_db_exists():
                     self.db.drop_db()
                     print("\nБаза данных удалена.")
+                    logger.info("База данных удалена.")
                 else:
                     if self.db.create_db():
                         print("\nБаза данных создана.")
+                        logger.info("База данных создана.")
                     else:
                         print("\nОшибка: не удалось создать базу данных.")
+                        logger.error("Ошибка: не удалось создать базу данных.")
 
             elif choice == "4":
                 logger.info("Назад.")
@@ -327,27 +328,53 @@ class DataBaseInteraction(Interaction):
 
                 employers = Employer.from_tuple_to_list(self.db.get_companies_and_vacancies_count())
 
-                for employer in employers:
-                    print(employer)
+                display_paginated_list(employers)
 
                 Employer.reset_employer_count()
 
             elif choice == "2":
                 vacancies = Vacancy.from_tuple_to_list(self.db.get_all_vacancies())
-                for vacancy in self._sorted_jobs(vacancies):
-                    print(vacancy)
+                display_paginated_list(self._sorted_jobs(vacancies))
 
             elif choice == "3":
 
                 keyword = input("\nВведите ключевое слово: ")
-                vacancies = Vacancy.from_tuple_to_list(self.db.get_vacancies_with_keyword(keyword))
-                for vacancy in self._sorted_jobs(vacancies):
-                    print(vacancy)
+                employer_id = 0
+                if input("\nВывести вакансии опреденного рабодателя? (Да/Нет) ").lower() == "да":
+                    while True:
+                        employer_name = input("\nВведите название работодателя: ")
+                        logger.info(f"Выбран работодатель: {employer_name}")
+                        companies_with_keyword = self.db.get_companies_with_keyword(employer_name)
+                        employers = Employer.from_tuple_to_list(companies_with_keyword)
+
+                        if len(employers) == 0:
+                            print(f"\nВакансии с называнием '{keyword}' у данного работодателя не найдены")
+                            continue
+                        
+                        if len(employers) == 1:
+                            employer_id = employers[0].id
+                            break
+
+                        else:
+                            try:
+                                display_paginated_list(employers)
+
+                                Employer.reset_employer_count()
+                                
+                                employer_id = employers[get_integer_input("\nВведите номер интересующего работодателя: ") - 1].id
+                                break
+
+                            except IndexError:
+                                print("\nНеверный номер работодателя.")
+                                continue
+
+                vacancies = Vacancy.from_tuple_to_list(self.db.get_vacancies_with_keyword(keyword, employer_id))
+                display_paginated_list(self._sorted_jobs(vacancies))
 
             elif choice == "4":
                 vacancies = Vacancy.from_tuple_to_list(self.db.get_vacancies_with_higher_salary())
-                for vacancy in self._sorted_jobs(vacancies):
-                    print(vacancy)
+                display_paginated_list(self._sorted_jobs(vacancies))
+
 
             elif choice == "5":
                 average_salary = self.db.get_avg_salary()

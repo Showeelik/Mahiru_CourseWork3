@@ -165,6 +165,66 @@ def filter_jobs_by_salary_range(jobs: List[Dict], salary_input: str) -> Optional
 
     return filtered_jobs
 
+def display_paginated_list(items: list, items_per_page: int = 20):
+    """
+    Функция для вывода списка с пагинацией.
+
+    :param list items: Список элементов для вывода.
+    :param int items_per_page: Количество элементов на странице.
+    """
+    total_items = len(items)
+    if total_items == 0:
+        print("\nСписок пуст.")
+        return
+
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+    if total_pages == 0:
+        total_pages = 1
+    current_page = 1
+
+    while True:
+        # Вычисляем индексы начала и конца для текущей страницы
+        start_index = (current_page - 1) * items_per_page
+        end_index = min(start_index + items_per_page, total_items)
+
+        # Очищаем экран перед выводом новой страницы (например, для терминала)
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+        # Выводим информацию о текущей странице и общее количество страниц
+        print(f"{f' Страница \033[96m№{current_page}/{total_pages}\033[0m ':=^109}\n")
+
+        # Выводим элементы для текущей страницы
+        for i in range(start_index, end_index):
+            print(items[i])
+
+        # Выводим информацию о текущей странице и общее количество страниц
+        print(f"{f' Страница \033[96m№{current_page}/{total_pages}\033[0m ':=^109}\n")
+
+        # Навигация
+        print("Навигация:\n'n' - следующая страница\n'p' - предыдущая страница\n'q' - выход\nИли введите номер страницы для переход на заданную страницу")
+        user_input = input("Введите команду: ").strip().lower()
+
+        if user_input == 'n':
+            if current_page < total_pages:
+                current_page += 1
+            else:
+                input("Вы на последней странице.")
+
+        elif user_input == 'p':
+            if current_page > 1:
+                current_page -= 1
+            else:
+                input("Вы на первой странице.")
+        elif user_input == 'q':
+            break
+        elif user_input.isdigit():
+            page_number = int(user_input)
+            if 1 <= page_number <= total_pages:
+                current_page = page_number
+            else:
+                input(f"Неверный номер страницы. Введите число от 1 до {total_pages}.")
+        else:
+            input("Неверная команда. Пожалуйста, повторите ввод.")
 
 class FileWorker(ABC):
     @abstractmethod

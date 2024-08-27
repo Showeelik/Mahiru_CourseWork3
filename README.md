@@ -44,7 +44,7 @@ DB_NAME=your_db_name
 DB_USER=your_db_user
 DB_PASSWORD=your_db_password
 ```
-##### для работы переименуйте в `.env`:
+#### для работы переименуйте файл `.env_template` в `.env`:
 
 
 ## Использование
@@ -74,7 +74,10 @@ DB_PASSWORD=your_db_password
 
 ```python
 db = DBManager()
+# Для поиска в определённой компании
 vacancies = db.get_vacancies_with_keyword("Python", company_id=12345)
+# Для поиска по всем вакансиям
+vacancies = db.get_vacancies_with_keyword("Python")
 ```
 
 ### Логи
@@ -96,4 +99,4 @@ pytest --cov
 
 ## Автор
 
-- **Ваше имя** - [Showeelik](https://github.com/Showeelik)
+- [Showeelik](https://github.com/Showeelik)

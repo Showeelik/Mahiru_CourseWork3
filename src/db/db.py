@@ -3,7 +3,7 @@ from typing import Any, List
 
 import dotenv
 import psycopg2
-from psycopg2 import Error
+from psycopg2 import Error, connect
 
 from src.utils import setup_logger
 
@@ -11,11 +11,48 @@ logger = setup_logger(__name__)
 dotenv.load_dotenv()
 
 
-class DBManager:
-    def __init__(self) -> None:
-        self.__conn = self.__connect()
-        self.__cursor = self.__conn.cursor()
 
+
+class ExecuteStatement:
+    def __init__(self, conn: psycopg2.extensions.connection, statement: str, params: tuple = ()) -> None:
+        self.__statement = statement
+        self.__params = params
+        self.__conn = conn
+        self.__cursor = None
+
+    def __enter__(self) -> 'ExecuteStatement':
+        # Устанавливаем курсор
+        self.__cursor = self.__conn.cursor()
+        return self
+
+    def execute(self) -> psycopg2.extensions.cursor:
+        try:
+            # Выполняем SQL-запрос
+            self.__cursor.execute(self.__statement, self.__params)
+        except Error as e:
+            logger.error(e)
+        return self.__cursor
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        if exc_type is not None:
+            # В случае исключения откатываем транзакцию
+            logger.error(f"Ошибка транзакции: {exc_val}")
+            self.__conn.rollback()
+        else:
+            # В случае успеха фиксируем изменения
+            self.__conn.commit()
+
+        # Закрываем курсор
+        if self.__cursor is not None:
+            logger.info("Закрытие курсора")
+            self.__cursor.close()
+        # Закрываем соединение
+        if self.__conn is not None:
+            logger.info("Закрытие соединения с базой данных")
+            self.__conn.close()
+
+class DBManager:
+    
     def __connect(self) -> psycopg2.extensions.connection:
         """
         Подключение к базе данных PostgreSQL.
@@ -23,8 +60,7 @@ class DBManager:
         :return psycopg2.extensions.connection: Объект соединения с базой данных.
         """
         try:
-
-            conn = psycopg2.connect(
+            conn = connect(
                 host=os.getenv("DB_HOST"),
                 database=os.getenv("DB_NAME"),
                 user=os.getenv("DB_USER"),
@@ -37,22 +73,10 @@ class DBManager:
             logger.error(f"Ошибка соединения: {error}")
             raise
 
-    def _execute_statement(self, statement: str, params: tuple = ()) -> bool:
-        """
-        Выполнение SQL-запроса.
-
-        :param str statement: SQL-запрос.
-        :param tuple params: Параметры для SQL-запроса.
-        :return bool: Успех выполнения запроса.
-        """
-        try:
-            self.__cursor.execute(statement, params)
-            self.__conn.commit()
-            return True
-        except Error as e:
-            logger.error(f"Ошибка выполнения SQL-запроса: {e}")
-            raise Error(e)
-
+    def _execute_statement(self, statement: str, params: tuple = ()) -> ExecuteStatement:
+        # Возвращаем экземпляр ExecuteStatement, который можно использовать как контекстный менеджер
+        return ExecuteStatement(self.__connect(), statement, params)
+        
     def create_db(self) -> bool:
         """
         Создание базы данных и необходимых таблиц.
@@ -90,7 +114,11 @@ class DBManager:
             description TEXT,
             requirement TEXT
         );"""
-        return self._execute_statement(statement)
+
+        with self._execute_statement(statement) as cursor:
+            cursor.execute()
+        return True
+
 
     def insert_into_employers(self, data: tuple) -> bool:
         """
@@ -104,7 +132,10 @@ class DBManager:
         VALUES (%s, %s, %s, %s, %s)
         ON CONFLICT (id) DO NOTHING;
         """
-        return self._execute_statement(statement, data)
+        with self._execute_statement(statement, data) as cursor:
+            cursor.execute()
+        return True
+
 
     def insert_into_vacancies(self, data: tuple) -> bool:
         """
@@ -121,7 +152,9 @@ class DBManager:
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (id) DO NOTHING;
         """
-        return self._execute_statement(statement, data)
+        with self._execute_statement(statement, data) as cursor:
+            cursor.execute()
+        return True
 
     def get_companies_and_vacancies_count(self) -> List[Any]:
         """
@@ -136,9 +169,24 @@ class DBManager:
         GROUP BY e.id
         ORDER BY vacancies_count DESC;
         """
-        if self._execute_statement(statement):
-            return self.__cursor.fetchall()
-        return []
+        with self._execute_statement(statement) as cursor:
+            cursor = cursor.execute()
+            return cursor.fetchall()
+    
+    def get_companies_with_keyword(self, keyword: str) -> List[Any]:
+        """
+        ## Поиск компаний по ключевому слову.
+        """
+        statement = """
+        SELECT *
+        FROM hh_api.employers
+        WHERE name ILIKE %s;
+        """
+        with self._execute_statement(statement, (f"%{keyword}%",)) as cursor:
+            cursor = cursor.execute()
+            return cursor.fetchall()
+
+
 
     def get_all_vacancies(self) -> List[Any]:
         """
@@ -147,9 +195,10 @@ class DBManager:
         :return list: Список всех вакансий.
         """
         statement = "SELECT * FROM hh_api.vacancies;"
-        if self._execute_statement(statement):
-            return self.__cursor.fetchall()
-        return []
+        with self._execute_statement(statement) as cursor:
+            cursor = cursor.execute()
+            return cursor.fetchall() 
+
 
     def get_avg_salary(self) -> float | None:
         """
@@ -171,10 +220,11 @@ class DBManager:
         FROM hh_api.vacancies
         WHERE salary_from IS NOT NULL OR salary_to IS NOT NULL;
         """
-        if self._execute_statement(statement):
-            result = self.__cursor.fetchone()
-            return result[0] if result and result[0] is not None else None
-        return None
+        with self._execute_statement(statement) as cursor:
+            cursor = cursor.execute()
+            result = cursor.fetchone()
+            return result[0] if result else None
+
 
     def get_vacancies_with_higher_salary(self) -> List[tuple[Any, ...]]:
         """
@@ -201,9 +251,10 @@ class DBManager:
             ELSE salary_from
         END > %s;
         """
-        if self._execute_statement(statement, (avg_salary,)):
-            return self.__cursor.fetchall()
-        return []
+        with self._execute_statement(statement, (avg_salary,)) as cursor:
+            cursor = cursor.execute()
+            return cursor.fetchall()
+
 
     def get_vacancies_with_keyword(self, keyword: str, company_id: int = 0) -> list:
         """
@@ -229,11 +280,9 @@ class DBManager:
             params = ("%" + keyword + "%",)  # Кортеж из одного элемента
 
         # Выполнение SQL-запроса и получение результатов
-        if self._execute_statement(statement, params):
-            result = self.__cursor.fetchall()
-            return result
-
-        return []
+        with self._execute_statement(statement, params) as cursor:
+            cursor = cursor.execute()
+            return cursor.fetchall()
 
     def check_if_db_exists(self) -> bool | None:
         """
@@ -249,11 +298,10 @@ class DBManager:
             AND table_name = 'employers'
         );
         """
-        if self._execute_statement(statement):
-            result = self.__cursor.fetchone()
+        with self._execute_statement(statement) as cursor:
+            cursor = cursor.execute()
+            result = cursor.fetchone()
             return result[0] if result else False
-
-        return False
 
     def drop_db(self) -> None:
         """
@@ -263,14 +311,5 @@ class DBManager:
         DROP TABLE IF EXISTS hh_api.vacancies;
         DROP TABLE IF EXISTS hh_api.employers;
         """
-        self._execute_statement(statement)
-
-    def close(self) -> None:
-        """
-        Закрытие соединения с базой данных.
-        """
-        if self.__cursor:
-            self.__cursor.close()
-        if self.__conn:
-            self.__conn.close()
-        logger.info("Соединение с базой данных закрыто.")
+        with self._execute_statement(statement) as cursor:
+            cursor.execute()

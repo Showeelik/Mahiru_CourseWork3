@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-# from src.utils import format_date
+from src.utils import format_date
 
 
 class Employer:
@@ -98,7 +98,7 @@ class Employer:
         cls.__employer_count = 0
 
     @classmethod
-    def from_tuple_to_list(cls, data: List[Tuple[int, str, str, str, int, int]]) -> List["Employer"]:
+    def from_tuple_to_list(cls, data: List[tuple]) -> List["Employer"]:
         """
         Преобразует список кортежей в список объектов класса Employer.
 
@@ -113,7 +113,7 @@ class Employer:
                 url=item[2],
                 vacancies_url=item[3],
                 vacancies_in_database=item[4],
-                open_vacancies=item[5],
+                open_vacancies=item[5] if len(item) > 5 and item[5] else 0,
             )
             instances.append(instance)
         return instances
@@ -155,7 +155,7 @@ class Vacancy:
         self.title = name
         self.url = url
         self.address = address
-        self.publication_date = publication_date
+        self.publication_date = format_date(publication_date)
         self.experience = experience
         self.schedule = schedule
         self.employment = employment
