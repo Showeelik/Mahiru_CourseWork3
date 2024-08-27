@@ -260,9 +260,9 @@ class DataBaseInteraction(Interaction):
                     if all(isinstance(item, Employer) for item in self.storage):
                         self._load_employers_to_db(self.storage)  # self.storage теперь точно List[Employer]
                     else:
-                        print("\nОшибка: список содержит объекты несоответствующего типа.")
+                        logger.error("Ошибка: список содержит объекты несоответствующего типа.")
                 else:
-                    print("\nОшибка: self.storage не является списком.")
+                    logger.error("\nОшибка: self.storage не является списком.")
 
             elif choice == "2":
 

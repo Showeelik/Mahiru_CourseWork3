@@ -134,6 +134,7 @@ class DBManager:
         """
         with self._execute_statement(statement, data) as cursor:
             cursor.execute()
+            logger.info("Вставка данных в таблицу employers")
         return True
 
 
@@ -154,6 +155,7 @@ class DBManager:
         """
         with self._execute_statement(statement, data) as cursor:
             cursor.execute()
+            logger.info("Вставка данных в таблицу vacancies")
         return True
 
     def get_companies_and_vacancies_count(self) -> List[Any]:
@@ -171,6 +173,7 @@ class DBManager:
         """
         with self._execute_statement(statement) as cursor:
             cursor = cursor.execute()
+            logger.info("Получение списка компаний и количества вакансий у каждой компании")
             return cursor.fetchall()
     
     def get_companies_with_keyword(self, keyword: str) -> List[Any]:
@@ -184,6 +187,7 @@ class DBManager:
         """
         with self._execute_statement(statement, (f"%{keyword}%",)) as cursor:
             cursor = cursor.execute()
+            logger.info("Поиск компаний по ключевому слову")
             return cursor.fetchall()
 
 
@@ -197,6 +201,7 @@ class DBManager:
         statement = "SELECT * FROM hh_api.vacancies;"
         with self._execute_statement(statement) as cursor:
             cursor = cursor.execute()
+            logger.info("Получение всех вакансий из базы данных")
             return cursor.fetchall() 
 
 
@@ -223,6 +228,7 @@ class DBManager:
         with self._execute_statement(statement) as cursor:
             cursor = cursor.execute()
             result = cursor.fetchone()
+            logger.info("Подсчет средней заработной платы")
             return result[0] if result else None
 
 
@@ -253,6 +259,7 @@ class DBManager:
         """
         with self._execute_statement(statement, (avg_salary,)) as cursor:
             cursor = cursor.execute()
+            logger.info("Получение вакансий с зарплатой выше средней")
             return cursor.fetchall()
 
 
@@ -282,6 +289,7 @@ class DBManager:
         # Выполнение SQL-запроса и получение результатов
         with self._execute_statement(statement, params) as cursor:
             cursor = cursor.execute()
+            logger.info("Вывод вакансий по ключевому слову во всех компаниях или только в указанной компании")
             return cursor.fetchall()
 
     def check_if_db_exists(self) -> bool | None:
@@ -301,6 +309,7 @@ class DBManager:
         with self._execute_statement(statement) as cursor:
             cursor = cursor.execute()
             result = cursor.fetchone()
+            logger.info("Проверка существования базы данных (схемы и таблиц)")
             return result[0] if result else False
 
     def drop_db(self) -> None:
@@ -312,4 +321,5 @@ class DBManager:
         DROP TABLE IF EXISTS hh_api.employers;
         """
         with self._execute_statement(statement) as cursor:
+            
             cursor.execute()
