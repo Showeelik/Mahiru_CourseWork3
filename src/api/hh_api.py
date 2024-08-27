@@ -125,7 +125,7 @@ class HHAPI(API):
         query: Optional[str] = None,
         page: int = 0,
         per_page: int = 10,
-        total_pages: Optional[int] = None,
+        total_pages: int = 20,
         sort_by: bool = False,
         area: Optional[int] = None,
     ) -> list[dict[Any, Any]]:
@@ -152,7 +152,7 @@ class HHAPI(API):
             self.__params_emp["area"] = area
 
         # Извлекать новые данные из API
-        while int(self.__params_emp["page"]) < total_pages if total_pages is not None else 20:
+        while int(self.__params_emp["page"]) < total_pages:
             response = requests.get(self.__url_employers, headers=self.__headers, params=self.__params_emp)
             response.raise_for_status()
             employers = response.json().get("items", [])
