@@ -1,7 +1,5 @@
 from typing import Any, Dict, List, Optional
 
-from src.utils import format_date
-
 
 class Employer:
     __employer_count = 0  # Атрибут класса для подсчета компаний
@@ -155,7 +153,7 @@ class Vacancy:
         self.title = name
         self.url = url
         self.address = address
-        self.publication_date = format_date(publication_date)
+        self.publication_date = publication_date
         self.experience = experience
         self.schedule = schedule
         self.employment = employment
