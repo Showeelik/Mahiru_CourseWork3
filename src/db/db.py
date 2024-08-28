@@ -11,8 +11,6 @@ logger = setup_logger(__name__)
 dotenv.load_dotenv()
 
 
-
-
 class ExecuteStatement:
     def __init__(self, conn: psycopg2.extensions.connection, statement: str, params: tuple = ()) -> None:
         self.__statement = statement
@@ -20,7 +18,7 @@ class ExecuteStatement:
         self.__conn = conn
         self.__cursor = None
 
-    def __enter__(self) -> 'ExecuteStatement':
+    def __enter__(self) -> "ExecuteStatement":
         # Устанавливаем курсор
         self.__cursor = self.__conn.cursor()
         return self
@@ -51,8 +49,9 @@ class ExecuteStatement:
             logger.info("Закрытие соединения с базой данных")
             self.__conn.close()
 
+
 class DBManager:
-    
+
     def __connect(self) -> psycopg2.extensions.connection:
         """
         Подключение к базе данных PostgreSQL.
@@ -76,7 +75,7 @@ class DBManager:
     def _execute_statement(self, statement: str, params: tuple = ()) -> ExecuteStatement:
         # Возвращаем экземпляр ExecuteStatement, который можно использовать как контекстный менеджер
         return ExecuteStatement(self.__connect(), statement, params)
-        
+
     def create_db(self) -> bool:
         """
         Создание базы данных и необходимых таблиц.
@@ -119,7 +118,6 @@ class DBManager:
             cursor.execute()
         return True
 
-
     def insert_into_employers(self, data: tuple) -> bool:
         """
         Вставка данных в таблицу employers.
@@ -136,7 +134,6 @@ class DBManager:
             cursor.execute()
             logger.info("Вставка данных в таблицу employers")
         return True
-
 
     def insert_into_vacancies(self, data: tuple) -> bool:
         """
@@ -175,7 +172,7 @@ class DBManager:
             cursor = cursor.execute()
             logger.info("Получение списка компаний и количества вакансий у каждой компании")
             return cursor.fetchall()
-    
+
     def get_companies_with_keyword(self, keyword: str) -> List[Any]:
         """
         ## Поиск компаний по ключевому слову.
@@ -190,8 +187,6 @@ class DBManager:
             logger.info("Поиск компаний по ключевому слову")
             return cursor.fetchall()
 
-
-
     def get_all_vacancies(self) -> List[Any]:
         """
         ## Получение всех вакансий из базы данных.
@@ -202,8 +197,7 @@ class DBManager:
         with self._execute_statement(statement) as cursor:
             cursor = cursor.execute()
             logger.info("Получение всех вакансий из базы данных")
-            return cursor.fetchall() 
-
+            return cursor.fetchall()
 
     def get_avg_salary(self) -> float | None:
         """
@@ -230,7 +224,6 @@ class DBManager:
             result = cursor.fetchone()
             logger.info("Подсчет средней заработной платы")
             return result[0] if result else None
-
 
     def get_vacancies_with_higher_salary(self) -> List[tuple[Any, ...]]:
         """
@@ -261,7 +254,6 @@ class DBManager:
             cursor = cursor.execute()
             logger.info("Получение вакансий с зарплатой выше средней")
             return cursor.fetchall()
-
 
     def get_vacancies_with_keyword(self, keyword: str, company_id: int = 0) -> list:
         """
@@ -321,5 +313,5 @@ class DBManager:
         DROP TABLE IF EXISTS hh_api.employers;
         """
         with self._execute_statement(statement) as cursor:
-            
+
             cursor.execute()

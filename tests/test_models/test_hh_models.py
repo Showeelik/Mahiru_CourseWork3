@@ -1,14 +1,13 @@
-import json
 import unittest
 
 from src.models.hh_models import Employer, Vacancy
 
 
 class TestEmployer(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         Employer.reset_employer_count()
 
-    def test_employer_creation(self):
+    def test_employer_creation(self) -> None:
         employer = Employer(1, "Test Company", "https://test.com", "https://test.com/vacancies", 10)
         self.assertEqual(employer.id, 1)
         self.assertEqual(employer.name, "Test Company")
@@ -18,13 +17,13 @@ class TestEmployer(unittest.TestCase):
         self.assertEqual(employer.vacancies_in_database, 0)
         self.assertEqual(employer.employer_count, 1)
 
-    def test_employer_count(self):
+    def test_employer_count(self) -> None:
         e1 = Employer(1, "Company A", "url_a", "vacancies_url_a", 5)
         e2 = Employer(2, "Company B", "url_b", "vacancies_url_b", 3)
         self.assertEqual(e1.employer_count, 1)
         self.assertEqual(e2.employer_count, 2)
 
-    def test_employer_str(self):
+    def test_employer_str(self) -> None:
         employer = Employer(1, "Test Company", "https://test.com", "https://test.com/vacancies", 10)
         expected_str = (
             f"{' Работодатель \033[96m№1\033[0m ':=^109}\n"
@@ -37,14 +36,14 @@ class TestEmployer(unittest.TestCase):
         )
         self.assertEqual(str(employer), expected_str)
 
-    def test_employer_comparison(self):
+    def test_employer_comparison(self) -> None:
         e1 = Employer(1, "Company A", "url_a", "vacancies_url_a", 5)
         e2 = Employer(2, "Company B", "url_b", "vacancies_url_b", 10)
         self.assertLess(e1, e2)
         self.assertGreater(e2, e1)
         self.assertNotEqual(e1, e2)
 
-    def test_employer_to_dict(self):
+    def test_employer_to_dict(self) -> None:
         employer = Employer(1, "Test Company", "https://test.com", "https://test.com/vacancies", 10)
         expected_dict = {
             "id": 1,
@@ -55,7 +54,7 @@ class TestEmployer(unittest.TestCase):
         }
         self.assertEqual(employer.to_dict(), expected_dict)
 
-    def test_create_instances_from_hh_api_data(self):
+    def test_create_instances_from_hh_api_data(self) -> None:
         hh_data = [
             {
                 "id": 1,
@@ -77,14 +76,14 @@ class TestEmployer(unittest.TestCase):
         self.assertEqual(instances[0].id, 1)
         self.assertEqual(instances[1].name, "Company B")
 
-    def test_employer_reset_count(self):
+    def test_employer_reset_count(self) -> None:
         Employer.reset_employer_count()
         e1 = Employer(1, "Company A", "url_a", "vacancies_url_a", 5)
         self.assertEqual(e1.employer_count, 1)
 
 
 class TestVacancy(unittest.TestCase):
-    def test_vacancy_creation(self):
+    def test_vacancy_creation(self) -> None:
         vacancy = Vacancy(
             1,
             1,
@@ -107,7 +106,7 @@ class TestVacancy(unittest.TestCase):
         self.assertTrue(vacancy.salary_gross)
         self.assertEqual(vacancy.requirement, "Some requirement")
 
-    def test_vacancy_str(self):
+    def test_vacancy_str(self) -> None:
         vacancy = Vacancy(
             1,
             1,
@@ -138,7 +137,7 @@ class TestVacancy(unittest.TestCase):
         )
         self.assertEqual(str(vacancy), expected_str)
 
-    def test_vacancy_comparison(self):
+    def test_vacancy_comparison(self) -> None:
         v1 = Vacancy(
             1,
             1,
@@ -161,7 +160,7 @@ class TestVacancy(unittest.TestCase):
         self.assertGreater(v2, v1)
         self.assertNotEqual(v1, v2)
 
-    def test_vacancy_to_dict(self):
+    def test_vacancy_to_dict(self) -> None:
         vacancy = Vacancy(
             1,
             1,
@@ -194,7 +193,7 @@ class TestVacancy(unittest.TestCase):
         }
         self.assertEqual(vacancy.to_dict(), expected_dict)
 
-    def test_vacancy_to_json(self):
+    def test_vacancy_to_json(self) -> None:
         vacancy = Vacancy(
             1,
             1,

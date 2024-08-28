@@ -3,18 +3,18 @@ from unittest.mock import MagicMock, patch
 
 from src.api.hh_api import HHAPI
 from src.models.hh_models import Employer, Vacancy
-from src.models.interaction import (DataBaseInteraction, EmployeeInteraction, SearchInteraction,
-                                    VacancyInteraction, DBManager, find_city, get_integer_input)
+from src.models.interaction import (DataBaseInteraction, DBManager, EmployeeInteraction, SearchInteraction,
+                                    VacancyInteraction, find_city)
 
 
 class TestInteraction(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         # Не создавайте экземпляр абстрактного класса Interaction
         # Замените Interaction на конкретную реализацию
         self.search_interaction = SearchInteraction(api=MagicMock(), search_type="employer")
 
-    def test_sorted_jobs(self):
+    def test_sorted_jobs(self) -> None:
         vacancies = [
             Vacancy(
                 name="Vacancy A",
@@ -46,7 +46,7 @@ class TestInteraction(unittest.TestCase):
         self.assertEqual(sorted_jobs[1].title, "Vacancy A")
         self.assertEqual(sorted_jobs[2].title, "Vacancy B")
 
-    def test_sorted_jobs_reverse(self):
+    def test_sorted_jobs_reverse(self) -> None:
         vacancies = [
             Vacancy(
                 name="Vacancy A",
@@ -83,7 +83,7 @@ class TestSearchInteraction(unittest.TestCase):
 
     @patch("src.models.interaction.HHAPI")
     @patch("src.models.interaction.AreaFileWorker")
-    def test_interact_employer(self, mock_area_file_worker, mock_api):
+    def test_interact_employer(self, mock_area_file_worker, mock_api) -> None:
         # Setup mocks
         mock_area_file_worker.return_value.load_data.return_value = [{"id": 1, "name": "City"}]
         mock_api.return_value.load_employers.return_value = [{"name": "Employer A"}]
@@ -100,7 +100,7 @@ class TestVacancyInteraction(unittest.TestCase):
 
     @patch("src.models.interaction.DBManager")
     @patch("src.models.interaction.HHAPI")
-    def test_interact(self, mock_api, mock_db):
+    def test_interact(self, mock_api, mock_db) -> None:
         # Setup mocks
         mock_db.return_value.get_companies_and_vacancies_count.return_value = [(1, 5)]
         mock_api.return_value.load_vacancies.return_value = [
@@ -127,7 +127,7 @@ class TestEmployeeInteraction(unittest.TestCase):
 
     @patch("src.models.interaction.HHAPI")
     @patch("src.models.interaction.EmployerFileWorker")
-    def test_interact(self, mock_employer_file_worker, mock_api):
+    def test_interact(self, mock_employer_file_worker, mock_api) -> None:
         # Setup mocks
         mock_employer_file_worker.return_value.load_data.return_value = [
             {
@@ -159,45 +159,108 @@ class TestEmployeeInteraction(unittest.TestCase):
 
 class TestDataBaseInteraction(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.api = HHAPI()
         self.db = DBManager()
 
-    def test_database_interaction_load_vacancies_to_db(self):
+    def test_database_interaction_load_vacancies_to_db(self) -> None:
         interaction = DataBaseInteraction(self.db)
         vacancy = Vacancy(
             id=1,
             id_employer=1,
-            name='Test Vacancy',
-            url='https://test.com',
-            publication_date='2020-01-01',
+            name="Test Vacancy",
+            url="https://test.com",
+            publication_date="2020-01-01",
         )
         interaction._load_vacancies_to_db([vacancy])
         self.assertTrue(interaction.db.insert_into_vacancies)
 
-    def test_database_interaction_load_employers_to_db(self):
+    def test_database_interaction_load_employers_to_db(self) -> None:
         interaction = DataBaseInteraction(self.db)
         employer = Employer(
             id=1,
-            name='Test Company',
-            url='https://test.com',
-            vacancies_url='https://test.com/vacancies',
-            open_vacancies=10
+            name="Test Company",
+            url="https://test.com",
+            vacancies_url="https://test.com/vacancies",
+            open_vacancies=10,
         )
         interaction._load_employers_to_db([employer])
         self.assertTrue(interaction.db.insert_into_employers)
 
-    def test_database_interaction_additional_functions(self):
+    def test_database_interaction_additional_functions(self) -> None:
         interaction = DataBaseInteraction(self.db)
-        interaction.db.get_companies_and_vacancies_count = MagicMock(return_value=[(1, 'Test Company', 'https://test.com', 'https://test.com/vacancies', 10, 10)])
-        interaction.db.get_all_vacancies = MagicMock(return_value=[(1, 1, 'Test Vacancy', 'https://test.com/vacancies/1', 'Test City', '2023-04-01T00:00:00+0300', '1-3', 'fullDay', 'full', 100000, 150000, 'RUR', False, 'Test Description', 'Test Requirement')])
-        interaction.db.get_vacancies_with_keyword = MagicMock(return_value=[(1, 1, 'Test Vacancy', 'https://test.com/vacancies/1', 'Test City', '2023-04-01T00:00:00+0300', '1-3', 'fullDay', 'full', 100000, 150000, 'RUR', False, 'Test Description', 'Test Requirement')])
-        interaction.db.get_vacancies_with_higher_salary = MagicMock(return_value=[(1, 1, 'Test Vacancy', 'https://test.com/vacancies/1', 'Test City', '2023-04-01T00:00:00+0300', '1-3', 'fullDay', 'full', 100000, 150000, 'RUR', False, 'Test Description', 'Test Requirement')])
+        interaction.db.get_companies_and_vacancies_count = MagicMock(
+            return_value=[(1, "Test Company", "https://test.com", "https://test.com/vacancies", 10, 10)]
+        )
+        interaction.db.get_all_vacancies = MagicMock(
+            return_value=[
+                (
+                    1,
+                    1,
+                    "Test Vacancy",
+                    "https://test.com/vacancies/1",
+                    "Test City",
+                    "2023-04-01T00:00:00+0300",
+                    "1-3",
+                    "fullDay",
+                    "full",
+                    100000,
+                    150000,
+                    "RUR",
+                    False,
+                    "Test Description",
+                    "Test Requirement",
+                )
+            ]
+        )
+        interaction.db.get_vacancies_with_keyword = MagicMock(
+            return_value=[
+                (
+                    1,
+                    1,
+                    "Test Vacancy",
+                    "https://test.com/vacancies/1",
+                    "Test City",
+                    "2023-04-01T00:00:00+0300",
+                    "1-3",
+                    "fullDay",
+                    "full",
+                    100000,
+                    150000,
+                    "RUR",
+                    False,
+                    "Test Description",
+                    "Test Requirement",
+                )
+            ]
+        )
+        interaction.db.get_vacancies_with_higher_salary = MagicMock(
+            return_value=[
+                (
+                    1,
+                    1,
+                    "Test Vacancy",
+                    "https://test.com/vacancies/1",
+                    "Test City",
+                    "2023-04-01T00:00:00+0300",
+                    "1-3",
+                    "fullDay",
+                    "full",
+                    100000,
+                    150000,
+                    "RUR",
+                    False,
+                    "Test Description",
+                    "Test Requirement",
+                )
+            ]
+        )
         interaction.db.get_avg_salary = MagicMock(return_value="125000.0")
         with patch("builtins.input", side_effect=["1", "q", "6", "4"]):
             interaction._additional_functions()
         self.assertTrue(interaction.db.get_companies_and_vacancies_count.called)
-    def test_find_city(self):
+
+    def test_find_city(self) -> None:
         data = [
             {"id": 1, "name": "Москва", "areas": []},
             {
@@ -209,6 +272,7 @@ class TestDataBaseInteraction(unittest.TestCase):
         self.assertEqual(find_city(data, "Москва"), 1)
         self.assertEqual(find_city(data, "Петергоф"), 3)
         self.assertIsNone(find_city(data, "Новосибирск"))
+
 
 if __name__ == "__main__":
     unittest.main()

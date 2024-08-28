@@ -10,7 +10,7 @@ class TestHHAPI(unittest.TestCase):
         self.api = HHAPI()
 
     @patch("src.api.hh_api.requests.get")
-    def test_load_employers(self, mock_get):
+    def test_load_employers(self, mock_get) -> None:
         # Mocking response data
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -24,7 +24,7 @@ class TestHHAPI(unittest.TestCase):
         self.assertEqual(employers[0]["name"], "Employer 1")
 
     @patch("src.api.hh_api.requests.get")
-    def test_load_vacancies(self, mock_get):
+    def test_load_vacancies(self, mock_get) -> None:
         # Mocking response data
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -38,7 +38,7 @@ class TestHHAPI(unittest.TestCase):
         self.assertEqual(vacancies[0]["name"], "Vacancy 1")
 
     @patch("src.api.hh_api.requests.get")
-    def test_load_vacancies_with_employers(self, mock_get):
+    def test_load_vacancies_with_employers(self, mock_get) -> None:
         # Mocking response data
         mock_response = MagicMock()
         mock_response.json.return_value = {

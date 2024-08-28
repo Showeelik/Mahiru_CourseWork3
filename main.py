@@ -1,6 +1,4 @@
-from typing import List
 from src.db.db import DBManager
-from src.models.hh_models import Employer, Vacancy
 from src.models.interaction import DataBaseInteraction, EmployeeInteraction, VacancyInteraction
 
 
@@ -16,7 +14,7 @@ def main() -> None:
             print("3. Работа с базой данных. Сохраните данные в базу данных.")
         else:
             print("3. Работа с базой данных")
-        
+
         print("4. Выход")
 
         choice = input("\nВаш выбор: ")

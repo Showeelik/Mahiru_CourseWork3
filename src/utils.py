@@ -165,7 +165,8 @@ def filter_jobs_by_salary_range(jobs: List[Dict], salary_input: str) -> Optional
 
     return filtered_jobs
 
-def display_paginated_list(items: list, items_per_page: int = 20):
+
+def display_paginated_list(items: list, items_per_page: int = 20) -> None:
     """
     Функция для вывода списка с пагинацией.
 
@@ -188,7 +189,7 @@ def display_paginated_list(items: list, items_per_page: int = 20):
         end_index = min(start_index + items_per_page, total_items)
 
         # Очищаем экран перед выводом новой страницы (например, для терминала)
-        os.system('cls' if os.name == 'nt' else 'clear')
+        os.system("cls" if os.name == "nt" else "clear")
 
         # Выводим информацию о текущей странице и общее количество страниц
         print(f"{f' Страница \033[96m№{current_page}/{total_pages}\033[0m ':=^109}\n")
@@ -201,21 +202,27 @@ def display_paginated_list(items: list, items_per_page: int = 20):
         print(f"{f' Страница \033[96m№{current_page}/{total_pages}\033[0m ':=^109}\n")
 
         # Навигация
-        print("Навигация:\n'n' - следующая страница\n'p' - предыдущая страница\n'q' - выход\nИли введите номер страницы для переход на заданную страницу")
+        print(
+            "Навигация:"
+            "\n'n' - следующая страница"
+            "\n'p' - предыдущая страница"
+            "\n'q' - выход"
+            "\nИли введите номер страницы для переход на заданную страницу"
+        )
         user_input = input("Введите команду: ").strip().lower()
 
-        if user_input == 'n':
+        if user_input == "n":
             if current_page < total_pages:
                 current_page += 1
             else:
                 input("Вы на последней странице.")
 
-        elif user_input == 'p':
+        elif user_input == "p":
             if current_page > 1:
                 current_page -= 1
             else:
                 input("Вы на первой странице.")
-        elif user_input == 'q':
+        elif user_input == "q":
             break
         elif user_input.isdigit():
             page_number = int(user_input)
@@ -225,6 +232,7 @@ def display_paginated_list(items: list, items_per_page: int = 20):
                 input(f"Неверный номер страницы. Введите число от 1 до {total_pages}.")
         else:
             input("Неверная команда. Пожалуйста, повторите ввод.")
+
 
 class FileWorker(ABC):
     @abstractmethod
